@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Órdenes de Trabajo - Multimotos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+
+  <!-- Estilos generales del sistema -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    :root{
+      --azul:#102962; --gris:#f4f4f4; --blanco:#ffffff;
+    }
+    body{ background:var(--gris); }
+    .page-title{ color:var(--azul); font-weight:800; }
+
+    .card{
+      border:0; border-radius:18px;
+      box-shadow:0 8px 26px rgba(16,41,98,.08);
+      background:var(--blanco);
+    }
+    .card-title{ color:var(--azul); font-weight:800; }
+
+    .btn-primary{ background:var(--azul); border:0; }
+    .btn-primary:hover{ background:#0b1d49; }
+
+    .table thead th{
+      position:sticky; top:0; background:var(--azul); color:#fff; z-index:1;
+    }
+
+    .badge-estado{ padding:.35em .65em; border-radius:50rem; font-weight:600; }
+    .badge-en_curso{ background:#0dcaf0; color:#000; }
+    .badge-pausada{ background:#ffc107; color:#000; }
+    .badge-finalizada{ background:#198754; color:#fff; }
+    .badge-entregada{ background:#6c757d; color:#fff; }
+
+    .progress{ height:8px; border-radius:4px; }
+    .progress-bar{ background-color:var(--azul); }
+
+    .checklist-item{ display:flex; align-items:center; padding:8px 0; border-bottom:1px solid rgba(0,0,0,.05); }
+    .checklist-item label{ margin-left:8px; margin-bottom:0; }
+  </style>
+</head>
+<body class="py-4">
+  <div class="container-xxl">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+      <h2 class="page-title mb-0">Órdenes de Trabajo</h2>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalProforma">
+          <i class="bi bi-file-text"></i> Desde Proforma
+        </button>
+        <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalNuevaOrden">
+          <i class="bi bi-plus-circle"></i> Nueva OT
+        </button>
+        <button class="btn btn-outline-secondary fw-bold" data-bs-toggle="modal" data-bs-target="#modalFiltros">
+          <i class="bi bi-funnel"></i> Filtros
+        </button>
+      </div>
+    </div>
+
+    <!-- Resumen de estados -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-md-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title">En Curso</h5>
+            <div class="display-4 fw-bold" id="cont-en_curso">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-md-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title">Pausadas</h5>
+            <div class="display-4 fw-bold" id="cont-pausada">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-md-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title">Finalizadas</h5>
+            <div class="display-4 fw-bold" id="cont-finalizada">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-md-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title">Entregadas</h5>
+            <div class="display-4 fw-bold" id="cont-entregada">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listado de OT -->
+    <section class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Listado de Órdenes</h5>
+        <div class="table-responsive" style="max-height:500px;">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Vehículo</th>
+                <th class="text-end">Total</th>
+                <th class="text-end">Saldo</th>
+                <th>Progreso</th>
+                <th>Estado</th>
+                <th class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-ordenes"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal Filtros -->
+  <div class="modal fade" id="modalFiltros" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" style="background:#102962;">
+          <h5 class="modal-title text-white">Filtrar Órdenes</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formFiltros">
+            <div class="mb-3">
+              <label class="form-label">Estado</label>
+              <select class="form-select" id="filtro-estado">
+                <option value="">Todos</option>
+                <option value="en_curso">En Curso</option>
+                <option value="pausada">Pausada</option>
+                <option value="finalizada">Finalizada</option>
+                <option value="entregada">Entregada</option>
+              </select>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Desde</label>
+                <input type="date" class="form-control" id="filtro-desde">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Hasta</label>
+                <input type="date" class="form-control" id="filtro-hasta">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Cliente</label>
+              <input type="text" class="form-control" id="filtro-cliente" placeholder="Buscar por cliente">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="aplicarFiltros()">Aplicar Filtros</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ver/Editar OT -->
+  <div class="modal fade" id="modalOrden" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header" style="background:#102962;">
+          <h5 class="modal-title text-white">Orden de Trabajo #<span id="orden-id"></span></h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="nav nav-tabs mb-4" id="ordenTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-tab-pane" type="button">Información</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="detalle-tab" data-bs-toggle="tab" data-bs-target="#detalle-tab-pane" type="button">Trabajos/Repuestos</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="abonos-tab" data-bs-toggle="tab" data-bs-target="#abonos-tab-pane" type="button">Abonos</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="checklist-tab" data-bs-toggle="tab" data-bs-target="#checklist-tab-pane" type="button">Checklist</button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="ordenTabsContent">
+            <!-- Pestaña Información -->
+            <div class="tab-pane fade show active" id="info-tab-pane" role="tabpanel">
+              <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                  <h5>Datos del Cliente</h5>
+                  <div class="mb-3">
+                    <label class="form-label">Cliente</label>
+                    <input type="text" class="form-control" id="orden-cliente" readonly>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Contacto</label>
+                    <input type="text" class="form-control" id="orden-contacto">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <h5>Datos del Vehículo</h5>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Vehículo</label>
+                      <input type="text" class="form-control" id="orden-vehiculo" readonly>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Placa</label>
+                      <input type="text" class="form-control" id="orden-placa" readonly>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Modelo</label>
+                      <input type="text" class="form-control" id="orden-modelo">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Kilometraje</label>
+                      <input type="text" class="form-control" id="orden-kilometraje" readonly>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                  <label class="form-label">Fecha de creación</label>
+                  <input type="date" class="form-control" id="orden-fecha-creacion" readonly>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Fecha entrega estimada</label>
+                  <input type="date" class="form-control" id="orden-fecha-entrega">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Estado</label>
+                  <select class="form-select" id="orden-estado">
+                    <option value="en_curso">En Curso</option>
+                    <option value="pausada">Pausada</option>
+                    <option value="finalizada">Finalizada</option>
+                    <option value="entregada">Entregada</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Observaciones</label>
+                <textarea class="form-control" id="orden-observaciones" rows="3"></textarea>
+              </div>
+            </div>
+
+            <!-- Pestaña Detalle -->
+            <div class="tab-pane fade" id="detalle-tab-pane" role="tabpanel">
+              <div class="table-responsive mb-3">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Tipo</th>
+                      <th>Descripción</th>
+                      <th width="100">Cantidad</th>
+                      <th width="150">P. Unitario</th>
+                      <th width="150">Subtotal</th>
+                      <th width="150">Mecánico</th>
+                      <th width="100">Estado</th>
+                      <th width="50"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="detalle-orden"></tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-outline-primary btn-sm" onclick="agregarItemDetalle()">
+                <i class="bi bi-plus"></i> Agregar Item
+              </button>
+            </div>
+
+            <!-- Pestaña Abonos -->
+            <div class="tab-pane fade" id="abonos-tab-pane" role="tabpanel">
+              <div class="row mb-4">
+                <div class="col-md-4">
+                  <div class="card"><div class="card-body">
+                    <h6 class="card-title">Total Orden</h6>
+                    <div class="fw-bold fs-4" id="orden-total">$0.00</div>
+                  </div></div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card"><div class="card-body">
+                    <h6 class="card-title">Total Abonado</h6>
+                    <div class="fw-bold fs-4" id="orden-abonado">$0.00</div>
+                  </div></div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card"><div class="card-body">
+                    <h6 class="card-title">Saldo Pendiente</h6>
+                    <div class="fw-bold fs-4" id="orden-saldo">$0.00</div>
+                  </div></div>
+                </div>
+              </div>
+
+              <div class="table-responsive mb-3">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Monto</th>
+                      <th>Tipo de Pago</th>
+                      <th>Observaciones</th>
+                      <th width="50"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="abonos-orden"></tbody>
+                </table>
+              </div>
+
+              <button type="button" class="btn btn-outline-primary btn-sm" onclick="registrarAbono()">
+                <i class="bi bi-plus"></i> Registrar Abono
+              </button>
+            </div>
+
+            <!-- Pestaña Checklist -->
+            <div class="tab-pane fade" id="checklist-tab-pane" role="tabpanel">
+              <h5 class="mb-3">Checklist de Recepción</h5>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="checklist-item">
+                    <input type="checkbox" class="form-check-input" id="check-llaves">
+                    <label for="check-llaves">Llaves entregadas</label>
+                  </div>
+                  <div class="checklist-item">
+                    <input type="checkbox" class="form-check-input" id="check-matricula">
+                    <label for="check-matricula">Matrícula entregada</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="checklist-item">
+                    <label>Cascos entregados:</label>
+                    <select class="form-select form-select-sm" id="check-cascos" style="width: 80px; display: inline-block;">
+                      <option value="0">0</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                    </select>
+                  </div>
+                  <div class="checklist-item">
+                    <label>Nivel de gasolina:</label>
+                    <select class="form-select form-select-sm" id="check-gasolina" style="width: 100px; display: inline-block;">
+                      <option value="0">0%</option>
+                      <option value="25">25%</option>
+                      <option value="50">50%</option>
+                      <option value="75">75%</option>
+                      <option value="100">100%</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3 mt-3">
+                <label class="form-label">Observaciones de recepción</label>
+                <textarea class="form-control" id="orden-observaciones-recepcion" rows="3"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-primary" onclick="guardarOrden()">Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nueva OT (manual) -->
+  <div class="modal fade" id="modalNuevaOrden" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" style="background:#102962;">
+          <h5 class="modal-title text-white">Nueva Orden de Trabajo</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formNuevaOT">
+            <div class="mb-3">
+              <label class="form-label">Cliente</label>
+              <input type="text" class="form-control" id="nvo-cliente" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Contacto</label>
+              <input type="text" class="form-control" id="nvo-contacto">
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Vehículo</label>
+                <input type="text" class="form-control" id="nvo-vehiculo" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Placa</label>
+                <input type="text" class="form-control" id="nvo-placa">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Modelo</label>
+                <input type="text" class="form-control" id="nvo-modelo">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Kilometraje</label>
+                <input type="text" class="form-control" id="nvo-km">
+              </div>
+            </div>
+            <div class="mb-3 mt-3">
+              <label class="form-label">Fecha entrega estimada</label>
+              <input type="date" class="form-control" id="nvo-fecha-entrega">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Observaciones</label>
+              <textarea class="form-control" id="nvo-observaciones" rows="2"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="crearOrdenManual()">Crear Orden</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Crear desde Proforma -->
+  <div class="modal fade" id="modalProforma" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" style="background:#102962;">
+          <h5 class="modal-title text-white">Crear desde Proforma</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formProforma">
+            <div class="mb-3">
+              <label class="form-label">ID de Proforma</label>
+              <input type="number" class="form-control" id="pf-id" required>
+            </div>
+            <div class="text-muted small">La OT copiará los ítems de la proforma y quedará en estado <strong>En Curso</strong>.</div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="crearDesdeProforma()">Crear OT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Lógica del módulo -->
+  <script src="js/ordenes_trabajo.js"></script>
+</body>
+</html>

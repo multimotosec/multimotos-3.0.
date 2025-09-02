@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cuentas por Cobrar (CxC) - Multimotos 2.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Estilos base del sistema -->
+  <link href="css/styles.css" rel="stylesheet">
+
+  <!-- Estilos de la pantalla (solo visual, sin tocar lógica) -->
+  <style>
+    :root{
+      --azul:#102962;   /* institucional */
+      --gris:#f4f4f4;   /* institucional */
+      --blanco:#ffffff; /* institucional */
+
+      /* tonos auxiliares */
+      --azul-50:#e9eef8;
+      --azul-100:#cdd7ee;
+      --azul-700:#0c204e;
+      --borde:#e5e7eb;
+    }
+
+    /* Scope para no afectar a otras pantallas */
+    body.cxc{
+      background:linear-gradient(180deg, var(--azul-50), var(--gris) 45%);
+      min-height:100dvh;
+      color:#1f2937;
+    }
+
+    .cxc .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem;
+    }
+
+    /* Encabezado */
+    .cxc .hero{
+      background: linear-gradient(135deg, var(--azul) 0%, var(--azul-700) 100%);
+      color: var(--blanco);
+      border-radius: 1rem;
+      padding: 1.25rem 1.25rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    }
+    .cxc .hero h1{
+      font-weight: 800;
+      letter-spacing: .3px;
+      margin: 0;
+      line-height: 1;
+    }
+    .cxc .hero .sub{
+      opacity:.9; font-size:.95rem; margin-top:.35rem;
+    }
+
+    /* Tarjetas */
+    .cxc .card{
+      border:1px solid var(--borde);
+      border-radius: 1rem;
+      box-shadow: 0 8px 18px rgba(16,41,98,.06);
+      overflow: hidden;
+      background: var(--blanco);
+    }
+    .cxc .card-title{
+      font-weight:700; color:var(--azul); margin-bottom:.75rem;
+    }
+
+    /* Controles */
+    .cxc .form-label{ font-weight:600; color:#374151; }
+    .cxc .form-control, .cxc .form-select{
+      border-radius:.75rem; border:1px solid #d1d5db;
+    }
+    .cxc .form-control:focus, .cxc .form-select:focus{
+      border-color: var(--azul);
+      box-shadow: 0 0 0 .2rem rgba(16,41,98,.12);
+    }
+
+    /* Botones (scoped) */
+    .cxc .btn-primary{
+      background: var(--azul); border-color: var(--azul);
+    }
+    .cxc .btn-primary:hover{ filter: brightness(.95); }
+    .cxc .btn-outline-primary{
+      color: var(--azul); border-color: var(--azul);
+    }
+    .cxc .btn-outline-primary:hover{
+      background: var(--azul); color: var(--blanco);
+    }
+    .cxc .btn-success{
+      background: #16a34a; border-color:#16a34a;
+    }
+    .cxc .btn-dark{
+      background:#0f172a; border-color:#0f172a;
+    }
+
+    /* Tabla */
+    .cxc .table-wrap{ max-height: 65vh; }
+    .cxc table thead th{
+      position: sticky; top: 0; background: #f9fafb; z-index: 1;
+      font-weight:700; color:#111827; border-bottom: 1px solid var(--borde);
+    }
+    .cxc .table-hover tbody tr:hover{
+      background: #f3f6fb;
+    }
+    .cxc .pill{
+      display:inline-block; padding:.2rem .6rem; border-radius:999px;
+      background:#eef2ff; font-size:.8rem; border:1px solid #e5e7eb;
+      color:#374151;
+    }
+
+    /* Estados */
+    .cxc .badge-estado{ font-weight:700; border-radius: .65rem; padding:.4rem .6rem; letter-spacing:.2px; }
+    .cxc .badge-Pendiente{ background:#fff3cd; color:#8a6d3b; }
+    .cxc .badge-Abonado{ background:#cff4fc; color:#055160; }
+    .cxc .badge-Liquidado{ background:#d1e7dd; color:#0f5132; }
+
+    /* Modal: estilo profesional */
+    .cxc .modal-content{
+      border: 0; border-radius: 1rem; box-shadow: 0 20px 40px rgba(0,0,0,.2);
+    }
+    .cxc .modal-header{
+      background: linear-gradient(135deg, var(--azul), var(--azul-700));
+      color: var(--blanco);
+      border-bottom:0;
+    }
+    .cxc .modal-title{ font-weight:800; }
+    .cxc .modal-body{ background: #fcfcfd; }
+    .cxc .modal-footer{ background: #fbfbfb; border-top:1px solid var(--borde); }
+
+    /* Tabla abonos dentro del modal */
+    .cxc .table-sm thead th{
+      background:#f3f4f6; color:#111827; border-bottom: 1px solid var(--borde);
+    }
+
+    /* Totales */
+    .totals-bar{
+      background:#ffffff;
+      border:1px solid var(--borde);
+      border-radius: .75rem;
+      padding:.6rem .9rem;
+      display:flex; gap:.75rem; align-items:center; justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .totals-bar .tot-chip{
+      background:#f3f4f6;
+      border:1px solid var(--borde);
+      border-radius:.75rem;
+      padding:.35rem .6rem;
+      font-weight:700;
+      color:#0c204e;
+    }
+
+    /* Accesibilidad y detalles */
+    .cxc .text-end-imp{ text-align:end; }
+    @media (max-width: 992px){
+      .cxc .text-end-imp{ text-align: start; }
+      .cxc .table-wrap{ max-height: 60vh; }
+    }
+  </style>
+</head>
+
+<body class="cxc">
+  <div class="wrap">
+    <!-- Hero -->
+    <div class="hero mb-4">
+      <h1>Cuentas por Cobrar</h1>
+      <div class="sub">Gestión de pendientes, abonos y liquidaciones — Multimotos 2.0</div>
+    </div>
+
+    <!-- Acciones y filtros -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-9">
+        <div class="card p-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-sm-2">
+              <label class="form-label" for="f-desde">Desde</label>
+              <input type="date" id="f-desde" class="form-control">
+            </div>
+            <div class="col-sm-2">
+              <label class="form-label" for="f-hasta">Hasta</label>
+              <input type="date" id="f-hasta" class="form-control">
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label" for="f-cliente">Cliente</label>
+              <input type="text" id="f-cliente" class="form-control" placeholder="Buscar cliente">
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label" for="f-estado">Estado</label>
+              <select id="f-estado" class="form-select">
+                <option value="">Todos</option>
+                <option>Pendiente</option>
+                <option>Abonado</option>
+                <option>Liquidado</option>
+              </select>
+            </div>
+            <div class="col-sm-2 d-grid">
+              <button id="btn-filtrar" class="btn btn-primary">Filtrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3">
+        <div class="card p-3 h-100 d-grid gap-2">
+          <button id="btn-importar" class="btn btn-outline-primary">Importar de Registro Diario</button>
+          <button id="btn-nuevo" class="btn btn-success">Nueva CxC (manual)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de totals + Acciones de impresión (no altera el diseño principal) -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-9">
+        <div class="totals-bar">
+          <span class="tot-chip">Items: <span id="t-items">0</span></span>
+          <span class="tot-chip">Total Monto: <span id="t-monto">$0.00</span></span>
+          <span class="tot-chip">Total Saldo: <span id="t-saldo">$0.00</span></span>
+        </div>
+      </div>
+      <div class="col-lg-3">
+        <div class="d-grid gap-2">
+          <button id="btn-print" class="btn btn-dark">Imprimir listado</button>
+          <button id="btn-edo-cta" class="btn btn-outline-primary">Estado de Cuenta (cliente)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla principal -->
+    <div class="card p-3">
+      <div class="table-responsive table-wrap">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Concepto</th>
+              <th class="text-end">Monto</th>
+              <th class="text-end">Saldo</th>
+              <th>Estado</th>
+              <th>Origen</th>
+              <th class="text-center">Ver</th>
+            </tr>
+          </thead>
+          <tbody id="tb-cxc">
+            <tr><td colspan="8" class="text-center py-3">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detalle CxC -->
+  <div class="modal fade" id="modalCxc" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalle de CxC</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-2 mb-2">
+            <div class="col-md-4"><strong>Fecha:</strong> <span id="d-fecha"></span></div>
+            <div class="col-md-4"><strong>Cliente:</strong> <span id="d-cliente"></span></div>
+            <div class="col-md-4"><strong>Estado:</strong> <span id="d-estado" class="badge"></span></div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-md-8"><strong>Concepto:</strong> <span id="d-concepto"></span></div>
+            <div class="col-md-4 text-end-imp"><strong>Monto:</strong> <span id="d-monto"></span></div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-12"><strong>Observaciones:</strong> <div id="d-obs">-</div></div>
+          </div>
+
+          <h6 class="mb-2">Abonos</h6>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th class="text-end">Monto</th>
+                  <th>Tipo Pago</th>
+                  <th>Observaciones</th>
+                  <th class="text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tb-abonos">
+                <tr><td colspan="5" class="text-center py-2">Sin abonos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="text-end mt-2">
+            <strong>Saldo:</strong> <span id="d-saldo" class="fs-5"></span>
+          </div>
+
+          <hr>
+          <h6 class="mb-2">Registrar abono</h6>
+          <form id="form-abono" class="row g-2">
+            <input type="hidden" id="a-cxc-id">
+            <div class="col-sm-3">
+              <label class="form-label" for="a-fecha">Fecha</label>
+              <input type="date" id="a-fecha" class="form-control" required>
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label" for="a-monto">Monto</label>
+              <input type="number" step="0.01" id="a-monto" class="form-control" required>
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label" for="a-tipo">Tipo Pago</label>
+              <input type="text" id="a-tipo" class="form-control" placeholder="Efectivo / Transferencia">
+            </div>
+            <div class="col-sm-3">
+              <label class="form-label" for="a-obs">Obs</label>
+              <input type="text" id="a-obs" class="form-control">
+            </div>
+            <div class="col-12 text-end">
+              <button class="btn btn-primary mt-2" type="submit">Agregar Abono</button>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nueva CxC (manual) -->
+  <div class="modal fade" id="modalNueva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="form-nueva" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nueva CxC (manual)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body row g-2">
+          <div class="col-sm-4">
+            <label class="form-label" for="n-fecha">Fecha</label>
+            <input type="date" id="n-fecha" class="form-control" required>
+          </div>
+          <div class="col-sm-8">
+            <label class="form-label" for="n-cliente">Cliente</label>
+            <input type="text" id="n-cliente" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="n-concepto">Concepto</label>
+            <input type="text" id="n-concepto" class="form-control" required>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label" for="n-monto">Monto</label>
+            <input type="number" step="0.01" id="n-monto" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="n-obs">Observaciones</label>
+            <input type="text" id="n-obs" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-success" type="submit">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/cxc.js"></script>
+</body>
+</html>

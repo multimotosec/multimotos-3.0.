@@ -1,0 +1,348 @@
+<!-- frontend/proveedores.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Proveedores</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Mantiene tus estilos globales -->
+  <link href="./css/styles.css" rel="stylesheet" />
+  <style>
+    :root { --azul:#102962; --gris:#f4f4f4; --blanco:#fff; }
+    * { box-sizing: border-box; }
+    body { background:var(--gris); margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial; color:#1b1b1b; }
+
+    /* Encabezado */
+    header { padding:16px; background:var(--azul); color:#fff; position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+    header h1 { margin:0; font-size:18px; font-weight:800; letter-spacing:.2px; }
+
+    /* Layout principal */
+    main { padding:16px; max-width:1200px; margin:0 auto; display:grid; gap:16px; }
+
+    /* === Overrides SOLO para Proveedores: ocultar menú lateral y resetear layout === */
+    /* Oculta variantes comunes de sidebars (fuertemente específico) */
+    #sidebar, .sidebar, .sidenav, .menu-lateral, .left-menu,
+    nav[aria-label="Sidebar"], aside[role="navigation"], aside.nav,
+    [class*="sidebar"], [class*="side-nav"], [id*="sidebar"] {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important; min-width: 0 !important;
+    }
+    /* Si el layout global trae contenedor con dos columnas, forzamos 1 sola columna y sin margen izquierdo */
+    .layout, .wrapper, .with-sidebar, .page-layout, .app-shell,
+    .content, .main, #main, #content, .page, .container, .content-wrapper {
+      display:block !important;
+      margin-left:0 !important;
+      padding-left:16px !important; /* mantén respiro */
+      max-width:1200px !important;
+    }
+    body { display:block !important; }
+
+    /* Tarjetas y controles */
+    .card { background:#fff; border-radius:14px; padding:16px; box-shadow:0 6px 24px rgba(16,41,98,.08); }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    /* Botones (consistente con el resto del sistema) */
+    .btn { background:var(--azul); color:#fff; border:none; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600; }
+    .btn.outline { background:transparent; color:var(--azul); border:1px solid var(--azul); }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+    /* Inputs */
+    .input, select, textarea { width:100%; padding:8px; border:1px solid #dde1ea; border-radius:10px; font:inherit; background:#fff; }
+
+    /* Tablas */
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px; border-bottom:1px solid #eef1f7; }
+    th { background:#f7f9fc; color:#2b2b2b; position:sticky; top:0; z-index:5; }
+    .right { text-align:right; }
+
+    /* Grids */
+    .grid { display:grid; gap:16px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    /* Modales */
+    .modal { position:fixed; inset:0; background:rgba(16,41,98,.15); display:none; z-index:1000; overflow:auto; padding:24px 12px; }
+    .muted{ color:#616a7f; font-size:12px; }
+
+    @media (max-width: 768px){
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header><h1>Módulo Proveedores</h1></header>
+
+  <main>
+    <!-- Acciones superiores -->
+    <section class="card">
+      <div class="toolbar">
+        <button class="btn" id="btnNuevoProv">+ Nuevo proveedor</button>
+        <button class="btn outline" id="btnNuevaCompra">+ Nueva compra</button>
+        <button class="btn outline" id="btnImportar">Importar desde Registro Diario</button>
+        <button class="btn outline" id="btnCruzarVentas">Cruzar con ventas</button>
+        <span style="flex:1"></span>
+        <input class="input" id="filtroNombre" placeholder="Buscar proveedor..." />
+      </div>
+
+      <div style="margin-top:12px; overflow:auto; max-height:50vh;">
+        <table>
+          <thead>
+            <tr>
+              <th>Proveedor</th>
+              <th>RUC</th>
+              <th>Teléfono</th>
+              <th>Facturas abiertas</th>
+              <th class="right">Saldo total</th>
+              <th style="width:120px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbProveedores"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Compras / Facturas -->
+    <section class="card">
+      <h3 style="margin:0 0 8px 0; color:#102962;">Compras / Facturas</h3>
+      <div class="toolbar">
+        <label>Proveedor:
+          <select id="selProv" class="input"></select>
+        </label>
+        <label>Estado:
+          <select id="selEstado" class="input">
+            <option value="">Todos</option>
+            <option value="abierta">Abiertas</option>
+            <option value="pagada">Pagadas</option>
+          </select>
+        </label>
+        <label>Desde: <input type="date" id="fDesde" class="input"></label>
+        <label>Hasta: <input type="date" id="fHasta" class="input"></label>
+        <button class="btn outline" id="btnFiltrar">Filtrar</button>
+      </div>
+
+      <div style="margin-top:12px; overflow:auto; max-height:55vh;">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>Nro Factura</th>
+              <th>Observaciones</th>
+              <th class="right">Total</th>
+              <th class="right">Abonado</th>
+              <th class="right">Saldo</th>
+              <th class="right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbCompras"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Proveedor -->
+  <div id="modalProv" class="modal">
+    <div class="card" style="max-width:640px; margin:0 auto;">
+      <h3 style="margin-top:0; color:#102962;">Nuevo Proveedor</h3>
+      <div class="grid grid-2">
+        <label>Nombre*<input id="provNombre" class="input" /></label>
+        <label>RUC<input id="provRuc" class="input" /></label>
+        <label>Teléfono<input id="provTel" class="input" /></label>
+        <label>Email<input id="provEmail" class="input" /></label>
+        <label class="grid-col-span-2">Dirección<input id="provDir" class="input" /></label>
+        <label class="grid-col-span-2">Observaciones<textarea id="provObs" class="input"></textarea></label>
+      </div>
+      <div class="toolbar" style="justify-content:flex-end; margin-top:12px">
+        <button class="btn outline" onclick="cerrarModal('modalProv')">Cancelar</button>
+        <button class="btn" id="btnGuardarProv">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Compra -->
+  <div id="modalCompra" class="modal">
+    <div class="card" style="max-width:960px; margin:0 auto;">
+      <h3 style="margin-top:0; color:#102962;">Nueva Compra / Factura</h3>
+      <div class="grid grid-3">
+        <label>Proveedor* <select id="cProv" class="input"></select></label>
+        <label>Fecha* <input type="date" id="cFecha" class="input" /></label>
+        <label># Factura <input id="cNum" class="input" /></label>
+        <label>Forma pago inicial
+          <select id="cFP" class="input">
+            <option value="">(opcional)</option>
+            <option>Pagado (Efectivo)</option>
+            <option>Pagado (Transferencia)</option>
+            <option>Pendiente</option>
+            <option>Tarjeta</option>
+          </select>
+        </label>
+        <label>Pago inicial <input id="cPago" type="number" step="0.01" class="input" /></label>
+        <label>Observaciones / Pedido <input id="cObs" class="input" placeholder="Ej: nuevo pedido o info relevante" /></label>
+      </div>
+
+      <h4 style="margin:12px 0 6px 0;">Detalle</h4>
+      <div style="overflow:auto; max-height:40vh;">
+        <table>
+          <thead>
+            <tr>
+              <th>Descripción</th>
+              <th class="right">Cant</th>
+              <th class="right">Costo</th>
+              <th class="right">Subtotal</th>
+              <th style="width:80px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbDetalle"></tbody>
+        </table>
+      </div>
+      <div class="toolbar" style="margin-top:8px">
+        <button class="btn outline" id="btnAddItem">+ Ítem</button>
+        <span style="flex:1"></span>
+        <strong>Total: <span id="compTotal">$0.00</span></strong>
+      </div>
+
+      <div class="toolbar" style="justify-content:flex-end; margin-top:12px">
+        <button class="btn outline" onclick="cerrarModal('modalCompra')">Cancelar</button>
+        <button class="btn" id="btnGuardarCompra">Guardar compra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pago -->
+  <div id="modalPago" class="modal">
+    <div class="card" style="max-width:560px; margin:0 auto;">
+      <h3 style="margin-top:0; color:#102962;">Registrar Pago</h3>
+      <div class="grid grid-2">
+        <label>Fecha* <input type="date" id="pFecha" class="input" /></label>
+        <label>Monto* <input type="number" step="0.01" id="pMonto" class="input" /></label>
+        <label>Forma de pago
+          <select id="pFP" class="input">
+            <option>Pagado (Efectivo)</option>
+            <option>Pagado (Transferencia)</option>
+            <option>Tarjeta</option>
+            <option>Pendiente</option>
+          </select>
+        </label>
+        <label>Observaciones <input id="pObs" class="input" /></label>
+      </div>
+      <div class="toolbar" style="justify-content:flex-end; margin-top:12px">
+        <button class="btn outline" onclick="cerrarModal('modalPago')">Cancelar</button>
+        <button class="btn" id="btnGuardarPago">Guardar pago</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Importar -->
+  <div id="modalImportar" class="modal">
+    <div class="card" style="max-width:960px; margin:0 auto;">
+      <h3 style="margin-top:0; color:#102962;">Importar desde Registro Diario (Proveedor)</h3>
+      <div class="toolbar">
+        <label>Desde: <input type="date" id="iDesde" class="input" /></label>
+        <label>Hasta: <input type="date" id="iHasta" class="input" /></label>
+        <button class="btn outline" id="btnBuscarImportables">Buscar</button>
+      </div>
+      <div style="overflow:auto; max-height:50vh;">
+        <table>
+          <thead>
+            <tr><th></th><th>Fecha</th><th>ID RD</th><th>Descripción</th><th class="right">Valor</th></tr>
+          </thead>
+          <tbody id="tbImportables"></tbody>
+        </table>
+      </div>
+      <div class="toolbar" style="justify-content:flex-end; margin-top:12px">
+        <button class="btn outline" onclick="cerrarModal('modalImportar')">Cerrar</button>
+        <button class="btn" id="btnImportarSel">Importar seleccionados</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Cruzar con ventas -->
+  <div id="modalCruzarVentas" class="modal">
+    <div class="card" style="max-width:1100px; margin:0 auto;">
+      <h3 style="margin-top:0; color:#102962;">Cruzar con ventas</h3>
+
+      <div class="toolbar">
+        <label>Desde: <input type="date" id="vDesde" class="input"></label>
+        <label>Hasta: <input type="date" id="vHasta" class="input"></label>
+        <input id="vFiltroDesc" class="input" placeholder="Filtrar por descripción...">
+        <button class="btn outline" id="btnBuscarVentas">Buscar ventas</button>
+      </div>
+
+
+      <div style="overflow:auto; max-height:35vh; margin-top:8px;">
+        <table>
+          <thead><tr><th></th><th>Fecha</th><th>Descripción</th><th class="right">Cant</th><th class="right">Público</th></tr></thead>
+          <tbody id="tbVentas"></tbody>
+        </table>
+      </div>
+
+      <div class="toolbar" style="margin-top:12px">
+        <button class="btn outline" id="btnPrepararCruce">Paso siguiente: preparar costos</button>
+        <span class="muted">Selecciona arriba las ventas que quieres cruzar.</span>
+      </div>
+
+      <div class="grid grid-3" style="margin-top:8px">
+        <label>Proveedor* <select id="xProv" class="input"></select></label>
+        <label>Fecha* <input type="date" id="xFecha" class="input"></label>
+        <label># Factura <input id="xNum" class="input"></label>
+      </div>
+      <label>Observaciones <input id="xObs" class="input" placeholder="Ej: pagada el 10/08/2025"></label>
+
+      <div style="overflow:auto; max-height:35vh; margin-top:8px;">
+        <table>
+          <thead><tr><th>Fecha venta</th><th>Descripción (editable)</th><th class="right">Cant</th><th class="right">Costo</th><th class="right">Subtotal</th></tr></thead>
+          <tbody id="tbCruce"></tbody>
+        </table>
+      </div>
+
+      <div class="toolbar" style="margin-top:8px">
+        <span style="flex:1"></span>
+        <strong>Total costo: <span id="cruceTotal">$0.00</span></strong>
+      </div>
+
+      <div class="toolbar" style="justify-content:flex-end; margin-top:12px">
+        <button class="btn outline" onclick="cerrarModal('modalCruzarVentas')">Cancelar</button>
+        <button class="btn" id="btnGuardarCruce">Guardar cruce como COMPRA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS del módulo (NO se modifica funcionalidad) -->
+  <script src="./js/proveedores.js"></script>
+
+  <!-- Script anti-sidebar específico para esta página (no toca lógica del módulo) -->
+  <script>
+    (function () {
+      // 1) Oculta paneles laterales comunes si quedaron por CSS
+      const selectors = [
+        '#sidebar', '.sidebar', '.sidenav', '.menu-lateral', '.left-menu',
+        'nav[aria-label="Sidebar"]', 'aside[role="navigation"]', 'aside.nav',
+        '[class*="sidebar"]', '[class*="side-nav"]', '[id*="sidebar"]', 'aside', 'nav'
+      ];
+      document.querySelectorAll(selectors.join(',')).forEach(el => {
+        const txt = (el.innerText || '').toLowerCase();
+        const isLeft = el.getBoundingClientRect().left <= 0;
+        const big = el.getBoundingClientRect().width >= 160 && el.getBoundingClientRect().height >= (window.innerHeight * 0.6);
+        if (txt.includes('módulo proveedores') || txt.includes('modulo proveedores') || (isLeft && big)) {
+          el.style.display = 'none';
+          el.style.visibility = 'hidden';
+          el.style.width = '0';
+          el.style.minWidth = '0';
+        }
+      });
+
+      // 2) Quita márgenes izquierdos heredados en posibles contenedores
+      ['.layout', '.wrapper', '.with-sidebar', '.page-layout', '.app-shell',
+       '.content', '.main', '#main', '#content', '.page', '.container', '.content-wrapper'
+      ].forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          el.style.marginLeft = '0';
+          if (parseFloat(getComputedStyle(el).paddingLeft) < 12) el.style.paddingLeft = '16px';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

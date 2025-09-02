@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Movimientos Diarios | Multimotos 2.0</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #f4f6f8;
+    }
+
+    header {
+      background-color: #0a2342;
+      color: #fff;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    header img {
+      height: 50px;
+    }
+
+    main {
+      padding: 40px 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    h2 {
+      color: #0a2342;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background-color: #e8eff7;
+      color: #0a2342;
+    }
+
+    tr:hover {
+      background-color: #f1f8ff;
+    }
+
+    .no-datos {
+      margin-top: 30px;
+      color: #888;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📋 Registro de Movimientos Diarios</h1>
+    <img src="logo.jpg" alt="Logo Multimotos">
+  </header>
+
+  <main>
+    <h2>Listado de Movimientos</h2>
+    <div id="contenedor-tabla">
+      <p class="no-datos">Cargando movimientos...</p>
+    </div>
+  </main>
+
+  <script>
+    async function cargarMovimientos() {
+      const contenedor = document.getElementById('contenedor-tabla');
+      try {
+        const res = await fetch('/api/reporte/movimientos');
+        const datos = await res.json();
+
+        if (datos.length === 0) {
+          contenedor.innerHTML = '<p class="no-datos">No hay movimientos registrados.</p>';
+          return;
+        }
+
+        let tabla = `
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cantidad</th>
+                <th>Descripción</th>
+                <th>Clasificación</th>
+                <th>Mecánico M/O</th>
+                <th>Ingreso</th>
+                <th>Com Técnico</th>
+                <th>Salida</th>
+                <th>Cliente</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        datos.forEach(reg => {
+          tabla += `
+            <tr>
+              <td>${reg.fecha}</td>
+              <td>${reg.cantidad}</td>
+              <td>${reg.descripcion}</td>
+              <td>${reg.clasificacion}</td>
+              <td>${reg.mecanico || ''}</td>
+              <td>${reg.ingreso.toFixed(2)}</td>
+              <td>${reg.comision.toFixed(2)}</td>
+              <td>${reg.salida.toFixed(2)}</td>
+              <td>${reg.cliente || ''}</td>
+              <td>${reg.observacion || ''}</td>
+            </tr>
+          `;
+        });
+
+        tabla += `</tbody></table>`;
+        contenedor.innerHTML = tabla;
+
+      } catch (error) {
+        console.error('Error al cargar movimientos:', error);
+        contenedor.innerHTML = '<p class="no-datos">Error al cargar movimientos.</p>';
+      }
+    }
+
+    cargarMovimientos();
+  </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reportes - Multimotos 2.0</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #0a2342;
+      color: white;
+      padding: 20px;
+    }
+
+    .sidebar h1 {
+      font-size: 18px;
+      margin-bottom: 30px;
+      color: #fff;
+      text-align: center;
+    }
+
+    .sidebar button {
+      display: block;
+      width: 100%;
+      padding: 12px 20px;
+      margin-bottom: 10px;
+      border: none;
+      background-color: #14365c;
+      color: white;
+      font-size: 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .sidebar button:hover {
+      background-color: #1b4d82;
+    }
+
+    .main {
+      flex-grow: 1;
+      background-color: #f9f9f9;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    .main h2 {
+      color: #0a2342;
+      margin-bottom: 20px;
+    }
+
+    #filtros-reporte {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #filtros-reporte label {
+      display: inline-block;
+      margin-right: 20px;
+      margin-bottom: 10px;
+    }
+
+    #filtros-reporte input,
+    #filtros-reporte select {
+      padding: 5px 8px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    #contenedor-movimientos table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+    }
+
+    #contenedor-movimientos th,
+    #contenedor-movimientos td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    #contenedor-movimientos th {
+      background-color: #e6f0ff;
+    }
+
+    #btn-aplicar {
+      padding: 6px 15px;
+      background-color: #0a2342;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    #btn-aplicar:hover {
+      background-color: #14365c;
+    }
+
+    #btn-exportar {
+      padding: 6px 15px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    #btn-exportar:hover {
+      background-color: #218838;
+    }
+
+    p.total-filtro {
+      font-weight: bold;
+      font-size: 16px;
+      color: #0a2342;
+      margin-top: 10px;
+    }
+  </style>
+  <script src="script_reportes.js" defer></script>
+</head>
+<body>
+  <div class="sidebar">
+    <h1>📊 Reportes</h1>
+    <button onclick="cargarMovimientos()">📅 Movimientos Diarios</button>
+    <button onclick="alert('🧾 Comisiones - en construcción')">🧾 Comisiones</button>
+    <button onclick="alert('💰 Cuentas por Cobrar - en construcción')">💰 Cuentas por Cobrar</button>
+    <button onclick="alert('📈 Resumen Financiero - en construcción')">📈 Resumen Financiero</button>
+    <button id="btn-exportar" onclick="exportarExcel()">⬇ Exportar a Excel</button>
+  </div>
+
+  <div class="main">
+    <h2>Reporte de Movimientos Diarios</h2>
+
+    <div id="filtros-reporte">
+      <label>Cliente:
+        <input type="text" id="filtro-cliente">
+      </label>
+      <label>Fecha:
+        <input type="date" id="filtro-fecha">
+      </label>
+      <label>Mes:
+        <select id="filtro-mes">
+          <option value="">-- Todos --</option>
+          <option value="1">Enero</option>
+          <option value="2">Febrero</option>
+          <option value="3">Marzo</option>
+          <option value="4">Abril</option>
+          <option value="5">Mayo</option>
+          <option value="6">Junio</option>
+          <option value="7">Julio</option>
+          <option value="8">Agosto</option>
+          <option value="9">Septiembre</option>
+          <option value="10">Octubre</option>
+          <option value="11">Noviembre</option>
+          <option value="12">Diciembre</option>
+        </select>
+      </label>
+      <label>Mecánico:
+        <input type="text" id="filtro-mecanico">
+      </label>
+      <button id="btn-aplicar" onclick="aplicarFiltros()">Aplicar Filtros</button>
+    </div>
+
+    <div id="contenedor-movimientos"></div>
+  </div>
+</body>
+</html>

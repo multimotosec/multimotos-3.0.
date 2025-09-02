@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mecánicos - Multimotos 2.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+
+  <style>
+    :root{
+      --azul:#102962;
+      --gris:#f4f4f4;
+      --blanco:#ffffff;
+    }
+    body{ background:var(--gris); }
+    .page-title{ color:var(--azul); font-weight:800; }
+    .card{ border:0; border-radius:18px; box-shadow:0 8px 26px rgba(16,41,98,.08); background:var(--blanco); }
+    .card-title{ color:var(--azul); font-weight:800; }
+    .btn-primary{ background:var(--azul); border:0; }
+    .btn-primary:hover{ background:#0b1d49; }
+    .table thead th{ position:sticky; top:0; background:var(--azul); color:#fff; z-index:1; }
+    .search-wrap{ background:var(--blanco); border-radius:14px; box-shadow:0 4px 16px rgba(16,41,98,.06); padding:12px 16px; }
+    @media (max-width: 576px){ .card{ border-radius:14px; } }
+  </style>
+</head>
+<body class="py-4">
+  <div class="container-xxl">
+    <!-- Encabezado -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+      <h2 class="page-title mb-0">Mecánicos</h2>
+      <div class="d-flex gap-2">
+        <div class="search-wrap">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input id="buscar" type="text" class="form-control" placeholder="Buscar mecánico...">
+            <button id="btnLimpiar" class="btn btn-outline-secondary">Limpiar</button>
+          </div>
+        </div>
+        <button class="btn btn-primary fw-bold" onclick="abrirModalNuevo()">
+          <i class="bi bi-plus-circle"></i> Nuevo
+        </button>
+        <a class="btn btn-outline-secondary" href="configuracion.html">
+          <i class="bi bi-gear"></i> Configuración
+        </a>
+      </div>
+    </div>
+
+    <!-- Formulario rápido (opcional) -->
+    <section class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Crear rápido</h5>
+        <form id="formRapido" class="row g-3" novalidate>
+          <div class="col-md-5">
+            <label class="form-label">Nombre</label>
+            <input id="mecNombre" class="form-control" placeholder="Nombre completo del mecánico" required>
+            <div class="invalid-feedback">Ingresa un nombre válido.</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">% Comisión</label>
+            <input type="number" id="mecPorcentaje" class="form-control" placeholder="Ej.: 30, 40, 50" min="0" max="100" step="0.01" required>
+            <div class="invalid-feedback">Ingresa un porcentaje válido.</div>
+          </div>
+          <div class="col-md-3 d-grid">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-primary fw-bold">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Listado -->
+    <section class="card">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Listado de Mecánicos</h5>
+        <div class="table-responsive" style="max-height: 60vh;">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th style="width:50%">Nombre</th>
+                <th style="width:20%">% Comisión</th>
+                <th class="text-center" style="width:30%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyMecanicos">
+              <!-- JS cargará aquí -->
+            </tbody>
+          </table>
+        </div>
+        <div id="vacio" class="text-center text-muted py-3 d-none">
+          <i class="bi bi-inbox"></i> Sin resultados
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal: crear/editar -->
+  <div class="modal fade" id="modalMecanico" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header" style="background:#102962;">
+          <h5 class="modal-title text-white" id="modalTitulo">Nuevo Mecánico</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formMecanico" novalidate>
+            <input type="hidden" id="mecId">
+            <div class="mb-3">
+              <label class="form-label">Nombre</label>
+              <input type="text" id="mecNombreModal" class="form-control" placeholder="Nombre completo del mecánico" required>
+              <div class="invalid-feedback">Ingresa un nombre válido.</div>
+            </div>
+            <div class="mb-1">
+              <label class="form-label">Porcentaje de comisión</label>
+              <input type="number" id="mecPorcentajeModal" class="form-control" placeholder="Ej.: 30, 40, 50" min="0" max="100" step="0.01" required>
+              <div class="invalid-feedback">Ingresa un porcentaje válido (0-100).</div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button id="btnGuardar" class="btn btn-primary">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ===== Estado =====
+    let cacheMecanicos = [];
+    let modalInst = null;
+
+    // ===== Utils =====
+    const $ = (sel) => document.querySelector(sel);
+    const normalizar = (s) => (s||'').toString().trim();
+
+    function pintarTabla(lista){
+      const tbody = $('#tbodyMecanicos');
+      tbody.innerHTML = '';
+      if(!lista.length){ $('#vacio').classList.remove('d-none'); return; }
+      $('#vacio').classList.add('d-none');
+
+      lista.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${m.nombre}</td>
+          <td>${Number(m.porcentaje_comision || 0).toFixed(2)}%</td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditar(${m.id}, '${(m.nombre||'').replace(/'/g,"\\'")}', ${m.porcentaje_comision || 0})">
+              <i class="bi bi-pencil-square"></i> Editar
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="desactivar(${m.id})">
+              <i class="bi bi-archive"></i> Desactivar
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function aplicarFiltro(){
+      const q = $('#buscar').value.toLowerCase().trim();
+      if(!q){ pintarTabla(cacheMecanicos); return; }
+      const filtrados = cacheMecanicos.filter(m =>
+        (m.nombre||'').toLowerCase().includes(q)
+      );
+      pintarTabla(filtrados);
+    }
+
+    // ===== Backend =====
+    async function cargarMecanicos(){
+      const res = await fetch('/api/mecanicos');
+      cacheMecanicos = await res.json();
+      pintarTabla(cacheMecanicos);
+    }
+
+    async function crearMecanico(nombre, porcentaje){
+      await fetch('/api/mecanicos', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ nombre, porcentaje_comision: porcentaje })
+      });
+    }
+
+    async function actualizarMecanico(id, nombre, porcentaje){
+      await fetch(`/api/mecanicos/${id}`, {
+        method:'PUT',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ nombre, porcentaje_comision: porcentaje })
+      });
+    }
+
+    async function desactivar(id){
+      if(!confirm('¿Desactivar este mecánico?')) return;
+      await fetch(`/api/mecanicos/${id}`, { method:'DELETE' });
+      await cargarMecanicos();
+      aplicarFiltro();
+    }
+
+    // ===== Modal =====
+    function abrirModalNuevo(){
+      $('#modalTitulo').textContent = 'Nuevo Mecánico';
+      $('#mecId').value = '';
+      $('#mecNombreModal').value = '';
+      $('#mecPorcentajeModal').value = '';
+      $('#mecNombreModal').classList.remove('is-invalid');
+      $('#mecPorcentajeModal').classList.remove('is-invalid');
+      modalInst.show();
+      setTimeout(()=>$('#mecNombreModal').focus(), 200);
+    }
+
+    function abrirModalEditar(id, nombre, porcentaje){
+      $('#modalTitulo').textContent = 'Editar Mecánico';
+      $('#mecId').value = id;
+      $('#mecNombreModal').value = nombre || '';
+      $('#mecPorcentajeModal').value = porcentaje || '';
+      $('#mecNombreModal').classList.remove('is-invalid');
+      $('#mecPorcentajeModal').classList.remove('is-invalid');
+      modalInst.show();
+      setTimeout(()=>$('#mecNombreModal').focus(), 200);
+    }
+
+    async function guardarDesdeModal(){
+      const id = $('#mecId').value;
+      const nombre = normalizar($('#mecNombreModal').value);
+      const porcentaje = parseFloat($('#mecPorcentajeModal').value) || 0;
+      
+      // Validaciones
+      let valido = true;
+      if(!nombre){
+        $('#mecNombreModal').classList.add('is-invalid');
+        valido = false;
+      }
+      if(isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100){
+        $('#mecPorcentajeModal').classList.add('is-invalid');
+        valido = false;
+      }
+      if(!valido) return;
+
+      $('#btnGuardar').disabled = true;
+      try{
+        if(id){
+          await actualizarMecanico(id, nombre, porcentaje);
+        }else{
+          await crearMecanico(nombre, porcentaje);
+        }
+        await cargarMecanicos();
+        aplicarFiltro();
+        modalInst.hide();
+      }catch(e){
+        alert('Ocurrió un error. Intenta nuevamente.');
+      }finally{
+        $('#btnGuardar').disabled = false;
+      }
+    }
+
+    // ===== Formulario rápido =====
+    async function guardarRapido(e){
+      e.preventDefault();
+      const nombre = normalizar($('#mecNombre').value);
+      const porcentaje = parseFloat($('#mecPorcentaje').value) || 0;
+      
+      // Validaciones
+      let valido = true;
+      if(!nombre){
+        $('#mecNombre').classList.add('is-invalid');
+        valido = false;
+      }else{
+        $('#mecNombre').classList.remove('is-invalid');
+      }
+      if(isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100){
+        $('#mecPorcentaje').classList.add('is-invalid');
+        valido = false;
+      }else{
+        $('#mecPorcentaje').classList.remove('is-invalid');
+      }
+      if(!valido) return;
+
+      try{
+        await crearMecanico(nombre, porcentaje);
+        $('#formRapido').reset();
+        await cargarMecanicos();
+        aplicarFiltro();
+      }catch(e){
+        alert('No se pudo guardar el mecánico');
+      }
+    }
+
+    // ===== Eventos =====
+    document.addEventListener('DOMContentLoaded', async () => {
+      modalInst = new bootstrap.Modal(document.getElementById('modalMecanico'));
+      await cargarMecanicos();
+
+      $('#buscar').addEventListener('input', aplicarFiltro);
+      $('#btnLimpiar').addEventListener('click', () => { $('#buscar').value=''; aplicarFiltro(); });
+
+      $('#btnGuardar').addEventListener('click', guardarDesdeModal);
+      $('#formMecanico').addEventListener('submit', (e)=>{ e.preventDefault(); guardarDesdeModal(); });
+      $('#formRapido').addEventListener('submit', guardarRapido);
+    });
+  </script>
+</body>
+</html>

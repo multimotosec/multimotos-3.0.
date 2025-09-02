@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reportes - Multimotos 2.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+
+  <!-- Estilos institucionales -->
+  <style>
+    :root {
+      --azul: #102962;
+      --azul-claro: #1a4b8c;
+      --gris: #f4f4f4;
+      --gris-medio: #e9ecef;
+      --blanco: #ffffff;
+    }
+
+    body {
+      background: var(--gris);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    .page-title {
+      color: var(--azul);
+      font-weight: 800;
+      font-size: 1.5rem;
+    }
+
+    .card {
+      border: 0;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(16, 41, 98, 0.08);
+      background: var(--blanco);
+      margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+      background: var(--blanco);
+      border-bottom: 1px solid var(--gris-medio);
+      border-radius: 12px 12px 0 0 !important;
+      padding: 1rem 1.5rem;
+    }
+
+    .card-title {
+      color: var(--azul);
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0;
+    }
+
+    .btn-primary {
+      background: var(--azul);
+      border: 0;
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+    }
+
+    .btn-primary:hover {
+      background: var(--azul-claro);
+    }
+
+    .btn-success {
+      background: #28a745;
+      border: 0;
+      font-weight: 600;
+    }
+
+    .btn-success:hover {
+      background: #218838;
+    }
+
+    /* Sidebar compacto */
+    .report-nav {
+      background: var(--blanco);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(16, 41, 98, 0.08);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .report-nav-title {
+      color: var(--azul);
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-item-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      color: var(--azul);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      margin-bottom: 0.25rem;
+    }
+
+    .nav-item-btn:hover {
+      background: rgba(16, 41, 98, 0.05);
+    }
+
+    .nav-item-btn.active {
+      background: rgba(16, 41, 98, 0.1);
+      font-weight: 600;
+    }
+
+    /* Tabla optimizada */
+    .table-report {
+      width: 100%;
+      font-size: 0.825rem;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .table-report thead th {
+      background: var(--azul);
+      color: var(--blanco);
+      font-weight: 600;
+      padding: 0.75rem 0.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .table-report tbody td {
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--gris-medio);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .table-report tbody tr:hover {
+      background: rgba(16, 41, 98, 0.03);
+    }
+
+    /* Filtros mejorados */
+    .filter-card {
+      background: var(--blanco);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(16, 41, 98, 0.08);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--azul);
+      margin-bottom: 0.25rem;
+    }
+
+    .filter-control {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+    }
+
+    /* Responsive optimizado */
+    @media (max-width: 992px) {
+      .table-report {
+        font-size: 0.8rem;
+      }
+      
+      .table-report thead th,
+      .table-report tbody td {
+        padding: 0.5rem 0.3rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .filter-card .col-md-3,
+      .filter-card .col-md-2 {
+        margin-bottom: 0.75rem;
+      }
+      
+      .btn-apply-filters {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .table-responsive {
+        border-radius: 8px;
+        border: 1px solid var(--gris-medio);
+      }
+      
+      .table-report {
+        font-size: 0.75rem;
+      }
+      
+      .page-title {
+        font-size: 1.3rem;
+      }
+    }
+    .table-report thead { display: none; }
+
+  </style>
+</head>
+<body class="py-3">
+  <div class="container-fluid">
+    <div class="row mb-3">
+      <div class="col">
+        <h2 class="page-title">Reportes</h2>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- Menú lateral compacto -->
+      <div class="col-lg-2">
+        <div class="report-nav">
+          <div class="report-nav-title">
+            <i class="bi bi-bar-chart"></i> Tipos de Reporte
+          </div>
+          <a href="#" class="nav-item-btn active" onclick="cargarMovimientos()">
+            <i class="bi bi-calendar"></i> Movimientos
+          </a>
+          <a href="#" class="nav-item-btn" onclick="alert('🧾 Comisiones - en construcción')">
+            <i class="bi bi-cash-stack"></i> Comisiones
+          </a>
+          <a href="#" class="nav-item-btn" onclick="alert('💰 Cuentas por Cobrar - en construcción')">
+            <i class="bi bi-wallet2"></i> Por Cobrar
+          </a>
+          <a href="#" class="nav-item-btn" onclick="alert('📈 Resumen Financiero - en construcción')">
+            <i class="bi bi-graph-up"></i> Financiero
+          </a>
+          <button id="btn-exportar" class="btn btn-success w-100 mt-2" onclick="exportarExcel()">
+            <i class="bi bi-download"></i> Exportar
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenido principal -->
+      <div class="col-lg-10">
+        <!-- Filtros -->
+        <div class="filter-card">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="filter-label">Cliente</label>
+              <input type="text" id="filtro-cliente" class="form-control filter-control" placeholder="Buscar cliente">
+            </div>
+            <div class="col-md-2">
+              <label class="filter-label">Fecha</label>
+              <input type="date" id="filtro-fecha" class="form-control filter-control">
+            </div>
+            <div class="col-md-2">
+              <label class="filter-label">Mes</label>
+              <select id="filtro-mes" class="form-select filter-control">
+                <option value="">Todos</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="filter-label">Mecánico</label>
+              <input type="text" id="filtro-mecanico" class="form-control filter-control" placeholder="Buscar mecánico">
+            </div>
+            <div class="col-md-2">
+              <button id="btn-aplicar" class="btn btn-primary btn-apply-filters" onclick="aplicarFiltros()">
+                <i class="bi bi-funnel"></i> Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="card">
+          <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="card-title">Reporte de Movimientos</h5>
+              <div class="text-muted small">Mostrando <span id="contador-registros">0</span> registros</div>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-report">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Descripción</th>
+                    <th>Mecánico</th>
+                    <th class="text-end">Ingreso</th>
+                    <th class="text-end">Salida</th>
+                  </tr>
+                </thead>
+                <tbody id="contenedor-movimientos">
+                  <!-- Los datos se cargarán aquí mediante JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Lógica del módulo -->
+  <script src="script_reportes.js"></script>
+  
+  <script>
+    // Este script solo para mejorar la UI, no afecta funcionalidad existente
+    document.addEventListener('DOMContentLoaded', function() {
+      // Actualizar contador de registros (simulado)
+      function actualizarContador() {
+        const rows = document.querySelectorAll('#contenedor-movimientos tr');
+        document.getElementById('contador-registros').textContent = rows.length;
+      }
+      
+      // Simular carga inicial
+      setTimeout(actualizarContador, 500);
+      
+      // Manejar clicks en el menú
+      document.querySelectorAll('.nav-item-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.nav-item-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

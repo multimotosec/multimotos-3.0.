@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Resumen y Cierre de Caja</title>
+  <link rel="stylesheet" href="estilos.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>Resumen de Caja del Día</h2>
+
+    <div id="resumen"></div>
+
+    <h3>Cierre de Caja Declarado</h3>
+    <form id="form-cierre" onsubmit="guardarCierre(event)">
+      <label for="efectivoReal">Efectivo contado:</label>
+      <input type="number" id="efectivoReal" required step="0.01" />
+
+      <label for="observacion">Observación (si hay descuadre):</label>
+      <textarea id="observacion" rows="3"></textarea>
+
+      <button type="submit">💰 Guardar Cierre</button>
+    </form>
+
+    <br>
+    <a href="index.html">← Volver al Menú</a>
+  </div>
+
+  <script>
+    let resumenActual = null;
+
+    function cargarResumen() {
+      fetch('/api/caja/resumen-hoy')
+        .then(res => res.json())
+        .then(data => {
+          resumenActual = data;
+          const div = document.getElementById('resumen');
+          if (!data.apertura) {
+            div.innerHTML = '<p>⚠️ No se ha aperturado la caja hoy.</p>';
+            document.getElementById('form-cierre').style.display = 'none';
+            return;
+          }
+
+          const dif = data.total_efectivo + data.total_banco - data.total_cierre;
+
+          div.innerHTML = `
+            <ul>
+              <li><strong>Apertura:</strong> $${data.apertura.toFixed(2)}</li>
+              <li><strong>Ingreso Efectivo:</strong> $${data.ingreso_efectivo.toFixed(2)}</li>
+              <li><strong>Ingreso Transferencia:</strong> $${data.ingreso_banco.toFixed(2)}</li>
+              <li><strong>Egresos:</strong> $${data.egresos.toFixed(2)}</li>
+              <li><strong>Total en Efectivo:</strong> $${data.total_efectivo.toFixed(2)}</li>
+              <li><strong>Total en Banco:</strong> $${data.total_banco.toFixed(2)}</li>
+              <li><strong>Total Esperado:</strong> $${data.total_cierre.toFixed(2)}</li>
+            </ul>
+            ${data.cierre ? `<p style="color:red;"><strong>⚠️ Esta caja ya fue cerrada.</strong></p>` : ''}
+          `;
+        })
+        .catch(err => {
+          console.error('Error al cargar resumen:', err);
+          alert('❌ No se pudo cargar el resumen.');
+        });
+    }
+
+    function guardarCierre(event) {
+      event.preventDefault();
+
+      const efectivoReal = parseFloat(document.getElementById('efectivoReal').value);
+      const observacion = document.getElementById('observacion').value;
+      const fechaHoy = new Date().toISOString().slice(0, 10);
+
+      const total_efectivo = efectivoReal;
+      const total_banco = resumenActual.total_banco;
+      const total_cierre = total_efectivo + total_banco;
+
+      fetch('/api/caja/cierre', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fecha: fechaHoy,
+          total_efectivo,
+          total_banco,
+          total_cierre,
+          observacion
+        })
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          alert('✅ Cierre guardado con éxito');
+          location.reload();
+        } else {
+          alert('❌ ' + (result.error || 'Error desconocido'));
+        }
+      })
+      .catch(err => {
+        console.error('❌ Error al guardar cierre:', err);
+        alert('❌ No se pudo guardar el cierre.');
+      });
+    }
+
+    cargarResumen();
+  </script>
+</body>
+</html>

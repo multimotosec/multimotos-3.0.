@@ -1,0 +1,402 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Multimotos 2.0</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Labels visibles en gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+  <style>
+    body{ margin:0; font-family:'Segoe UI',sans-serif; display:flex; height:100vh; }
+    .sidebar{ width:250px; background:#102962; color:#fff; display:flex; flex-direction:column; padding:20px; }
+    .sidebar h1{ font-size:20px; margin-bottom:30px; color:#fff; text-align:center; }
+    .sidebar a{ display:flex; align-items:center; text-decoration:none; color:#fff; padding:10px 15px; margin-bottom:8px; border-radius:8px; transition:background-color .3s, transform .2s; font-size:15px; }
+    .sidebar a:hover{ background:#14365c; transform:translateX(5px); }
+    .sidebar a span{ margin-right:10px; }
+
+    .main-content{ flex-grow:1; background:#f4f4f4; padding:30px; overflow-y:auto; }
+    .main-content h2{ color:#102962; font-size:24px; font-weight:800; margin-bottom:20px; }
+
+    .stats-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:15px; margin-bottom:20px; }
+    .stat-card{ background:#fff; border-radius:12px; padding:15px; box-shadow:0 4px 16px rgba(16,41,98,.06); }
+    .stat-card h4{ color:#666; font-size:14px; margin:0 0 10px 0; font-weight:600; }
+    .stat-card .value{ color:#102962; font-size:24px; font-weight:800; }
+    .stat-card .trend{ font-size:12px; margin-top:5px; color:#999; }
+
+    .dashboard-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(500px,1fr)); gap:20px; margin-top:20px; }
+    .card{ background:#fff; border-radius:18px; box-shadow:0 8px 26px rgba(16,41,98,.08); padding:20px; }
+    .card-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .card-title{ color:#102962; font-weight:800; font-size:18px; margin:0; }
+    .card-actions{ display:flex; gap:10px; }
+    .btn-filter{ background:#f4f4f4; border:none; border-radius:8px; padding:5px 10px; font-size:12px; cursor:pointer; }
+    .btn-filter.active{ background:#102962; color:#fff; }
+    .chart-container{ position:relative; height:300px; width:100%; }
+
+    @media (max-width:1200px){
+      .dashboard-grid{ grid-template-columns:1fr; }
+      .stats-grid{ grid-template-columns:repeat(2,1fr); }
+    }
+    @media (max-width:768px){
+      .stats-grid{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h1>Multimotos 2.0</h1>
+    <a href="caja.html"><span>📦</span> Apertura / Cierre de Caja</a>
+    <a href="registro_diario.html"><span>📋</span> Registro Diario</a>
+    <a href="proformas.html"><span>📄</span> Proformas</a>
+    <a href="ordenes_trabajo.html"><span>🛠️</span> Órdenes de Trabajo</a>
+    <a href="proveedores.html"><span>🏪</span> Proveedores</a>
+    <a href="cxc.html"><span>💰</span> Cuentas por Cobrar</a>
+    <a href="comisiones.html"><span>🧾</span> Comisiones</a>
+    <a href="reportes.html"><span>📊</span> Reportes</a>
+    <a href="configuracion.html"><span>⚙️</span> Configuración</a>
+  </div>
+
+  <div class="main-content">
+    <h2>Dashboard de Producción</h2>
+
+    <!-- Tarjetas -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h4>Producción del Mes</h4>
+        <div id="vProdMes" class="value">$ 0.00</div>
+        <div class="trend">—</div>
+      </div>
+      <div class="stat-card">
+        <h4>Total Mano de Obra del mes</h4>
+        <div id="vMoMes" class="value">$ 0.00</div>
+        <div class="trend">—</div>
+      </div>
+      <div class="stat-card">
+        <h4>Ventas del mes</h4>
+        <div id="vVentasMes" class="value">$ 0.00</div>
+        <div class="trend">—</div>
+      </div>
+      <div class="stat-card">
+        <h4>Cuentas por Cobrar</h4>
+        <div id="vCxc" class="value">$ 0.00</div>
+        <div class="trend">—</div>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Producción Mensual</h3>
+          <div class="card-actions">
+            <button class="btn-filter active">2025</button>
+            <button class="btn-filter">2024</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="produccionChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Distribución por Tipo de Servicio</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="serviciosChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Tendencia Anual de Producción</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="tendenciaChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Producción por Mecánicos</h3>
+          <div class="card-actions">
+            <button id="btnMetas" class="btn-filter">⚙️ Metas</button>
+            <button class="btn-filter active">Mes</button>
+            <button class="btn-filter">Año</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="mecanicosChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Registrar plugin de etiquetas
+    Chart.register(ChartDataLabels);
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const fmt = (n) => `$ ${Number(n||0).toFixed(2)}`;
+
+      // Tarjetas
+      const $prodMes   = document.getElementById('vProdMes');
+      const $moMes     = document.getElementById('vMoMes');
+      const $ventasMes = document.getElementById('vVentasMes');
+      const $cxc       = document.getElementById('vCxc');
+
+      // Fecha
+      const hoy = new Date();
+      const anioActual = hoy.getFullYear();
+      const mesActual  = hoy.getMonth() + 1; // 1..12
+
+      // Gráficos
+      const labelsMeses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+      const produccionChart = new Chart(document.getElementById('produccionChart'), {
+        type: 'bar',
+        data: { labels: labelsMeses, datasets: [{ label: 'Producción ($)', data: new Array(12).fill(0), backgroundColor: '#102962', borderRadius: 6 }] },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{ display:false },
+            datalabels:{
+              anchor:'end', align:'end',
+              formatter:(v)=> v ? fmt(v):'',
+              clamp:true
+            }
+          },
+          scales:{ y:{ beginAtZero:true, grid:{ color:'rgba(0,0,0,.05)'} }, x:{ grid:{ display:false }} }
+        }
+      });
+
+      const serviciosChart = new Chart(document.getElementById('serviciosChart'), {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: ['#102962','#1a4b8c','#3a7bd5','#6ba1e8','#a8c7f0','#d0e1fb','#7f9fcf','#375a9e'], borderWidth:0 }] },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{ position:'right' },
+            datalabels:{
+              formatter:(v)=> v ? fmt(v):'',
+              anchor:'center', align:'center'
+            }
+          },
+          cutout:'70%'
+        }
+      });
+
+      const tendenciaChart = new Chart(document.getElementById('tendenciaChart'), {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Producción Anual ($)', data: [], borderColor:'#102962', backgroundColor:'rgba(16,41,98,.1)', borderWidth:3, tension:.3, fill:true, pointBackgroundColor:'#102962', pointRadius:5, pointHoverRadius:7 }] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }}, scales:{ y:{ beginAtZero:false, grid:{ color:'rgba(0,0,0,.05)'}}, x:{ grid:{ display:false }}}}
+      });
+
+      const mecanicosChart = new Chart(document.getElementById('mecanicosChart'), {
+        type: 'bar',
+        data: { labels: [], datasets: [] },
+        options:{
+          responsive:true, maintainAspectRatio:false, indexAxis:'y',
+          plugins:{
+            legend:{ display:true },
+            datalabels:{ clamp:true, anchor:'end', align:'right', formatter:(v)=> v? fmt(v):'' }
+          },
+          scales:{ x:{ beginAtZero:true, grid:{ color:'rgba(0,0,0,.05)'}}, y:{ grid:{ display:false }}}
+        }
+      });
+
+      // ========= Utilidades =========
+      function ymd(fechaDDMMYYYY){
+        const [dd, mm, yyyy] = String(fechaDDMMYYYY||'').split('/');
+        return { anio:Number(yyyy||0), mes:Number(mm||0), dia:Number(dd||0) };
+      }
+
+      // ========= Datos desde el backend =========
+      let datos = [];
+      try {
+        const res = await fetch('/api/reporte/movimientos');
+        datos = await res.json();
+      } catch (e) {
+        console.error('No se pudo leer /api/reporte/movimientos', e);
+        return;
+      }
+
+      // ========= Cálculos de tarjetas =========
+      // Producción del mes: (ingresos - salidas) del mes en curso
+      // Mano de Obra del mes: sum(ingreso donde clasificacion='Mano de Obra') del mes
+      // Ventas del mes: sum(ingreso donde clasificacion='Venta') del mes
+      // CxC: sum(ingreso donde tipo_pago='Pendiente') a la fecha (sin filtrar por mes)
+      let prodMes = 0, moMes = 0, ventasMes = 0, cxcTotal = 0;
+
+      // Para gráficos:
+      const prodMensual = new Array(12).fill(0);
+      const porServicio = new Map(); // clasificacion -> total ingreso
+      const porAnio = new Map();
+      const porMec = new Map();
+
+      datos.forEach(r => {
+        const ing = Number(r.ingreso || 0);
+        const sal = Number(r.salida  || 0);
+        const cls = String(r.clasificacion||'').trim();
+        const tp  = String(r.tipo_pago||'').trim();
+        const { anio, mes } = ymd(r.fecha);
+
+        // Tarjetas
+        if (anio === anioActual && mes === mesActual) {
+          prodMes += (ing - sal);
+          if (cls.toLowerCase() === 'mano de obra') moMes += ing;
+          if (cls.toLowerCase() === 'venta')         ventasMes += ing;
+        }
+        if (tp.toLowerCase() === 'pendiente') cxcTotal += ing;
+
+        // Gráfico mensual (ingresos)
+        if (anio === anioActual && mes>=1 && mes<=12) prodMensual[mes-1] += ing;
+
+        // Servicios (ingresos)
+        if (ing > 0){
+          const k = cls || 'Otros';
+          porServicio.set(k, (porServicio.get(k)||0) + ing);
+        }
+
+        // Tendencia anual (ingresos)
+        if (anio) porAnio.set(anio, (porAnio.get(anio)||0) + ing);
+
+        // Por mecánico (ingresos)
+        const mec = String(r.mecanico||'').trim();
+        if (mec && ing>0) porMec.set(mec, (porMec.get(mec)||0) + ing);
+      });
+
+      // Pintar tarjetas
+      $prodMes.textContent   = fmt(prodMes);
+      $moMes.textContent     = fmt(moMes);
+      $ventasMes.textContent = fmt(ventasMes);
+      $cxc.textContent       = fmt(cxcTotal);
+
+      // Producción mensual
+      produccionChart.data.datasets[0].data = prodMensual.map(v=>Number(v.toFixed(2)));
+      produccionChart.update();
+
+      // Distribución por servicio
+      const servTop = [...porServicio.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+      serviciosChart.data.labels = servTop.map(x=>x[0]);
+      serviciosChart.data.datasets[0].data = servTop.map(x=>Number(x[1].toFixed(2)));
+      serviciosChart.update();
+
+      // Tendencia anual
+      const years = [...porAnio.keys()].sort((a,b)=>a-b);
+      tendenciaChart.data.labels = years.map(String);
+      tendenciaChart.data.datasets[0].data = years.map(a=>Number(porAnio.get(a).toFixed(2)));
+      tendenciaChart.update();
+
+      // ====== Producción por mecánicos + metas ======
+      const ordenMec = [...porMec.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+      const labelsMec = ordenMec.map(x=>x[0]);
+      const prodMec   = ordenMec.map(x=>Number(x[1].toFixed(2)));
+
+      // 1) Cargar metas del mes
+      let metas = [];
+      try{
+        const r = await fetch(`/api/metas?anio=${anioActual}&mes=${mesActual}`);
+        metas = await r.json();
+      }catch(e){ metas = []; }
+
+      const metaByName = new Map(metas.map(m => [m.mecanico, Number(m.meta||0)]));
+      const metaMec = labelsMec.map(n => metaByName.get(n) || 0);
+
+      // 2) Armar gráfico con 2 datasets (Producción y Meta)
+      mecanicosChart.data.labels = labelsMec;
+      mecanicosChart.data.datasets = [
+        {
+          label:'Producción ($)',
+          data: prodMec,
+          backgroundColor: '#102962',
+          borderRadius: 6,
+          datalabels:{
+            anchor:'end', align:'right',
+            formatter:(v,ctx)=>{
+              const m = metaMec[ctx.dataIndex]||0;
+              if (m>0){
+                const pct = Math.round((v/m)*100);
+                return `${fmt(v)} (${pct}%)`;
+              }
+              return fmt(v);
+            }
+          }
+        },
+        {
+          label:'Meta ($)',
+          data: metaMec,
+          backgroundColor: 'rgba(16,41,98,0.12)',
+          borderColor:'#102962',
+          borderWidth:2,
+          borderDash:[6,4],
+          borderRadius:6,
+          datalabels:{ anchor:'end', align:'start', formatter:(v)=> v? fmt(v):'' }
+        }
+      ];
+      mecanicosChart.update();
+
+      // Botón rápido para configurar metas (simple con prompt)
+      document.getElementById('btnMetas').addEventListener('click', async ()=>{
+        // Traemos lista de mecánicos activos con sus IDs
+        let listaMec = [];
+        try{
+          const r = await fetch('/api/mecanicos');
+          listaMec = await r.json();
+        }catch(e){ listaMec = []; }
+
+        for (const m of listaMec){
+          const actual = metaByName.get(m.nombre) || 0;
+          const val = prompt(`Meta mensual ($) para ${m.nombre} (${anioActual}-${String(mesActual).padStart(2,'0')}):`, actual);
+          if (val === null) continue;
+          const metaNum = Number(val);
+          if (isNaN(metaNum)) continue;
+
+          await fetch('/api/metas', {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ mecanico_id: m.id, anio: anioActual, mes: mesActual, meta: metaNum })
+          });
+
+          metaByName.set(m.nombre, metaNum);
+        }
+
+        // Refrescar dataset de metas en el gráfico
+        const nuevasMetas = mecanicosChart.data.labels.map(n => metaByName.get(n) || 0);
+        mecanicosChart.data.datasets[1].data = nuevasMetas;
+        mecanicosChart.update();
+      });
+
+      // Botones de año en Producción Mensual
+      document.querySelectorAll('.card:has(#produccionChart) .btn-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.card:has(#produccionChart) .btn-filter').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          const year = Number(btn.textContent.trim());
+          const nuevo = new Array(12).fill(0);
+          datos.forEach(r => {
+            const { anio, mes } = ymd(r.fecha);
+            const ing = Number(r.ingreso||0);
+            if (anio === year && mes>=1 && mes<=12) nuevo[mes-1]+=ing;
+          });
+          produccionChart.data.datasets[0].data = nuevo.map(v=>Number(v.toFixed(2)));
+          produccionChart.update();
+        });
+      });
+    });
+  </script>
+
+<script>
+  (function ensureAuth(){
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = 'login.html'; }
+  })();
+</script>
+
+
+</body>
+</html>
