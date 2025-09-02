@@ -1,87 +1,55 @@
+// backend/index.js
 const express = require('express');
-const app = express();
 const path = require('path');
+const app = express();
 
-// Conexión con la base de datos
-const db = require('./database');
-
-require('./initDB'); // crea/migra tablas al arrancar
+// DB y migraciones
+require('./database');
+require('./initDB');
 
 // Middleware
 app.use(express.json());
 
-// Servir frontend
-//app.use(express.static(path.join(__dirname, '../frontend')));
+// Servir la carpeta de la interfaz (ajusta si tu carpeta se llama distinto)
 app.use(express.static(path.join(__dirname, '../interfaz')));
 
-// === Proformas === //
-const proformasRoutes = require('./routes/proformas');
-app.use('/api/proformas', proformasRoutes);
+// --- Rutas que SÍ existen en tu repo ---
+try {
+  const registroRoutes = require('./routes/registro');
+  app.use('/api/registro', registroRoutes);
+} catch (e) {
+  console.warn('Ruta /api/registro no cargada:', e.message);
+}
 
-// === Ordenes de Trabajo === //
-const ordenesRoutes = require('./routes/ordenes_trabajo');
-app.use(ordenesRoutes);
+try {
+  const tiposPagoRoutes = require('./routes/tipos_pago');
+  app.use('/api/tipos_pago', tiposPagoRoutes);
+} catch (e) {
+  console.warn('Ruta /api/tipos_pago no cargada:', e.message);
+}
 
-// === Proveedores === //
-const proveedoresRoutes = require('./routes/proveedores');
-app.use('/api/proveedores', proveedoresRoutes);
+try {
+  const tiposTransaccionRoutes = require('./routes/tipos_transaccion');
+  app.use('/api/tipos_transaccion', tiposTransaccionRoutes);
+} catch (e) {
+  console.warn('Ruta /api/tipos_transaccion no cargada:', e.message);
+}
 
-// === Metas de Mecánicos === //
-const metasRoutes = require('./routes/metas');
-app.use('/api/metas', metasRoutes);
-
-// === Comisiones == //
-const comisionesRoutes = require('./routes/comisiones');
-app.use('/api/comisiones', comisionesRoutes);
-
-// === Caja === //
-const cajaRoutes = require('./routes/caja');
-app.use('/api/caja', cajaRoutes);
-
-// === Cuentas por Cobrar CXC === //
-const cxcRoutes = require('./routes/cxc');
-app.use('/api/cxc', cxcRoutes);
-
-// === Auth & Usuarios === //
-const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
-
-const usuariosRoutes = require('./routes/usuarios');
-app.use('/api/usuarios', usuariosRoutes);
-
-// === Rutas de la API ===
-const mecanicosRoutes = require('./routes/mecanicos');
-app.use('/api/mecanicos', mecanicosRoutes);
-
-const transaccionRoutes = require('./routes/tipos_transaccion');
-app.use('/api/tipos_transaccion', transaccionRoutes);
-
-const tiposPagoRoutes = require('./routes/tipos_pago');
-app.use('/api/tipos_pago', tiposPagoRoutes);
-
-const registroRoutes = require('./routes/registro');
-const reporteExcelRoutes = require('./routes/reporte_excel');
-app.use('/api/registro', registroRoutes);
-app.use('/api/reporte-excel', reporteExcelRoutes);
-
-// Rutas nuevas de reportes (asegúrate que exista backend/routes/reporte.js)
-const reporteRoutes = require('./routes/reporte');
-app.use('/api/reporte', reporteRoutes); // <-- ESTA ES LA QUE DA ACCESO A MOVIMIENTOS
-
-// Rutas antiguas agrupadas en api.js (opcional, si las usas)
-const apiRoutes = require('./api');
-app.use(apiRoutes);
+// Healthcheck (para verificar que el servidor está vivo)
+app.get('/health', (_req, res) => {
+  res.json({ ok: true, msg: 'Multimotos 3.0 up' });
+});
 
 // Página principal
-app.get('/', (req, res) => {
-  //res.sendFile(path.join(__dirname, '../frontend/index.html'));
+app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, '../interfaz/index.html'));
 });
 
-// Iniciar servidor
-// const PORT = 3000;
+// Puerto para Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
+
+
 
