@@ -1,10 +1,20 @@
+// backend/initDB.js
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-// Ruta hacia la base de datos
-const dbPath = path.join(__dirname, '../database/database.db');
-const db = new sqlite3.Database(dbPath);
+// === Ruta hacia la base de datos (local o nube) ===
+// En la nube (Render) usaremos DATA_DIR montado en un disco (ej: /var/data)
+// En tu PC seguirá usando ../database
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../database');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+const dbPath = path.join(DATA_DIR, 'database.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) console.error('❌ Error abriendo DB:', err.message);
+  else console.log('✔ DB abierta en:', dbPath);
+});
 
 db.serialize(() => {
   // ========== USUARIOS ==========
@@ -332,4 +342,3 @@ const ensureColumn = async (table, column, definition) => {
     console.error('Error en migración de Comisiones:', e.message);
   }
 })();
-
